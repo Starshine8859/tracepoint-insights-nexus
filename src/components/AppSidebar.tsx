@@ -31,14 +31,15 @@ const navigation = [
 ];
 
 const AppSidebar = () => {
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
 
   return (
     <Sidebar
       className={`border-r border-border ${
         collapsed ? "w-[70px]" : "w-64"
       } transition-all duration-300 ease-in-out`}
-      collapsible
+      collapsible="icon"
     >
       <SidebarTrigger className="m-2 self-end" />
       <SidebarContent className="mt-4">
