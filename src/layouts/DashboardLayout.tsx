@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AuthButton } from "@/components/AuthButton";
 
 const DashboardLayout = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -58,6 +59,8 @@ const DashboardLayout = () => {
               <Button variant="ghost" size="icon" onClick={showNotification}>
                 <Bell className="h-5 w-5" />
               </Button>
+              
+              <AuthButton />
               
               <Button variant="ghost" size="icon" asChild>
                 <a href="/settings">

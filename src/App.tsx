@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { AuthProvider } from "@/contexts/AuthContext";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Index from "./pages/Index";
 import DevicesPage from "./pages/DevicesPage";
@@ -19,24 +20,25 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        {/* Fixed SidebarProvider by removing defaultCollapsed and using proper props */}
-        <SidebarProvider>
-          <Routes>
-            <Route path="/" element={<DashboardLayout />}>
-              <Route index element={<Index />} />
-              <Route path="devices" element={<DevicesPage />} />
-              <Route path="devices/:deviceId" element={<DeviceDetailsPage />} />
-              <Route path="trends" element={<TrendsPage />} />
-              <Route path="crashes" element={<CrashAnalysisPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </SidebarProvider>
-      </BrowserRouter>
+      <AuthProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <SidebarProvider>
+            <Routes>
+              <Route path="/" element={<DashboardLayout />}>
+                <Route index element={<Index />} />
+                <Route path="devices" element={<DevicesPage />} />
+                <Route path="devices/:deviceId" element={<DeviceDetailsPage />} />
+                <Route path="trends" element={<TrendsPage />} />
+                <Route path="crashes" element={<CrashAnalysisPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </SidebarProvider>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
