@@ -22,7 +22,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <SidebarProvider collapsedWidth={70}>
+        <SidebarProvider defaultCollapsed={false}>
           <Routes>
             <Route path="/" element={<DashboardLayout />}>
               <Route index element={<Index />} />

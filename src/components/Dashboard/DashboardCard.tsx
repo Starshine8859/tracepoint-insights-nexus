@@ -20,7 +20,7 @@ const DashboardCard = ({
   footer,
   fullHeight = false
 }: DashboardCardProps) => (
-  <Card className={cn("shadow-sm", fullHeight && "h-full", className)}>
+  <Card className={cn("shadow-sm transition-colors", fullHeight && "h-full", className)}>
     <CardHeader className="pb-2">
       <CardTitle className="text-lg font-medium">{title}</CardTitle>
       {description && <CardDescription>{description}</CardDescription>}

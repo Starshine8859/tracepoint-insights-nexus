@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/sidebar";
 
 const AppSidebar = () => {
-  const { collapsed } = useSidebar();
+  const { isCollapsed } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
   
@@ -40,23 +40,22 @@ const AppSidebar = () => {
   return (
     <Sidebar
       className={`bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-width duration-300 ${
-        collapsed ? "w-[70px]" : "w-[240px]"
+        isCollapsed ? "w-[70px]" : "w-[240px]"
       }`}
-      collapsible
     >
       <div className="p-4 flex justify-center items-center">
-        {!collapsed && (
+        {!isCollapsed && (
           <div className="flex items-center justify-center">
             <Shield className="h-8 w-8 text-primary mr-2" />
             <span className="text-xl font-bold text-gray-800 dark:text-white">TracePoint</span>
           </div>
         )}
-        {collapsed && <Shield className="h-8 w-8 text-primary" />}
+        {isCollapsed && <Shield className="h-8 w-8 text-primary" />}
       </div>
       
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+          <SidebarGroupLabel className={isCollapsed ? "sr-only" : ""}>
             Main
           </SidebarGroupLabel>
           
@@ -66,7 +65,7 @@ const AppSidebar = () => {
                 <SidebarMenuButton asChild>
                   <NavLink to="/" className={getNavClass} end>
                     <Home className="mr-2 h-5 w-5" />
-                    {!collapsed && <span>Dashboard</span>}
+                    {!isCollapsed && <span>Dashboard</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -75,7 +74,7 @@ const AppSidebar = () => {
                 <SidebarMenuButton asChild>
                   <NavLink to="/devices" className={getNavClass}>
                     <HardDrive className="mr-2 h-5 w-5" />
-                    {!collapsed && <span>Devices</span>}
+                    {!isCollapsed && <span>Devices</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -84,7 +83,7 @@ const AppSidebar = () => {
                 <SidebarMenuButton asChild>
                   <NavLink to="/trends" className={getNavClass}>
                     <TrendingUp className="mr-2 h-5 w-5" />
-                    {!collapsed && <span>Trends</span>}
+                    {!isCollapsed && <span>Trends</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -93,7 +92,7 @@ const AppSidebar = () => {
                 <SidebarMenuButton asChild>
                   <NavLink to="/crashes" className={getNavClass}>
                     <AlertTriangle className="mr-2 h-5 w-5" />
-                    {!collapsed && <span>Crash Analysis</span>}
+                    {!isCollapsed && <span>Crash Analysis</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -102,7 +101,7 @@ const AppSidebar = () => {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+          <SidebarGroupLabel className={isCollapsed ? "sr-only" : ""}>
             Configuration
           </SidebarGroupLabel>
           
@@ -112,7 +111,7 @@ const AppSidebar = () => {
                 <SidebarMenuButton asChild>
                   <NavLink to="/settings" className={getNavClass}>
                     <Settings className="mr-2 h-5 w-5" />
-                    {!collapsed && <span>Settings</span>}
+                    {!isCollapsed && <span>Settings</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

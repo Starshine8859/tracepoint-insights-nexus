@@ -7,6 +7,7 @@ import { Bell, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const DashboardLayout = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -29,7 +30,7 @@ const DashboardLayout = () => {
   };
   
   return (
-    <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen w-full bg-background dark:bg-background">
       <AppSidebar />
       
       <div className="flex flex-col flex-1 overflow-hidden">
@@ -51,6 +52,8 @@ const DashboardLayout = () => {
                   day: 'numeric' 
                 })}
               </div>
+              
+              <ThemeToggle />
               
               <Button variant="ghost" size="icon" onClick={showNotification}>
                 <Bell className="h-5 w-5" />
