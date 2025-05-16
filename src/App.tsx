@@ -22,7 +22,8 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <SidebarProvider defaultCollapsed={false}>
+        {/* Fixed SidebarProvider by removing defaultCollapsed and using proper props */}
+        <SidebarProvider>
           <Routes>
             <Route path="/" element={<DashboardLayout />}>
               <Route index element={<Index />} />

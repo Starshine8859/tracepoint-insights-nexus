@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -183,8 +182,8 @@ const Index = () => {
               <YAxis />
               <Tooltip 
                 formatter={(value, name) => {
-                  if (name === "crashCount") return [value, "Crashes"];
-                  return [`${value}%`, name.replace("avg", "")];
+                  const formattedName = typeof name === 'string' ? name.replace(/([A-Z])/g, ' $1').trim() : name;
+                  return [`${value}%`, formattedName];
                 }}
               />
               <Bar dataKey="avgCpu" name="CPU" fill="#3B82F6" />

@@ -10,7 +10,8 @@ import {
   Cpu,
   Database,
   AlertTriangle,
-  Clock
+  Clock,
+  CheckCircle
 } from "lucide-react";
 import {
   LineChart,
@@ -23,6 +24,7 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import DashboardCard from "@/components/Dashboard/DashboardCard";
 import GaugeChart from "@/components/Dashboard/GaugeChart";
 import StatusBadge from "@/components/Dashboard/StatusBadge";
@@ -245,7 +247,11 @@ const DeviceDetailsPage = () => {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="date" />
                   <YAxis />
-                  <Tooltip formatter={(value, name) => [`${value}%`, name.toUpperCase()]} />
+                  <Tooltip formatter={(value, name) => {
+                    // Fix type issue by checking if name is a string before calling toUpperCase
+                    const formattedName = typeof name === 'string' ? name.toUpperCase() : name;
+                    return [`${value}%`, formattedName];
+                  }} />
                   <Line
                     type="monotone"
                     dataKey="cpu"
@@ -281,7 +287,7 @@ const DeviceDetailsPage = () => {
             {allCrashes.length === 0 ? (
               <div className="text-center py-12">
                 <div className="mx-auto w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                  <CircleCheck className="h-6 w-6 text-green-500" />
+                  <CheckCircle className="h-6 w-6 text-green-500" />
                 </div>
                 <h3 className="mt-4 text-lg font-medium">No Crashes Detected</h3>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
