@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { LoginModal } from "@/components/LoginModal";
+import { SignUpModal } from "@/components/SignUpModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogIn, LogOut, User } from "lucide-react";
 import {
@@ -15,7 +16,18 @@ import {
 
 export function AuthButton() {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [signUpModalOpen, setSignUpModalOpen] = useState(false);
   const { user, logout } = useAuth();
+
+  const openLoginModal = () => {
+    setSignUpModalOpen(false);
+    setLoginModalOpen(true);
+  };
+
+  const openSignUpModal = () => {
+    setLoginModalOpen(false);
+    setSignUpModalOpen(true);
+  };
 
   if (user) {
     return (
@@ -55,7 +67,16 @@ export function AuthButton() {
       >
         <LogIn className="h-5 w-5" />
       </Button>
-      <LoginModal open={loginModalOpen} onOpenChange={setLoginModalOpen} />
+      <LoginModal 
+        open={loginModalOpen} 
+        onOpenChange={setLoginModalOpen} 
+        onSwitchToSignUp={openSignUpModal} 
+      />
+      <SignUpModal 
+        open={signUpModalOpen} 
+        onOpenChange={setSignUpModalOpen}
+        onSwitchToLogin={openLoginModal} 
+      />
     </>
   );
 }

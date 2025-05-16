@@ -12,6 +12,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
+  signup: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -52,6 +53,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return true;
       }
       
+      // Check if a user was created with signup
+      const usersStr = localStorage.getItem("users");
+      if (usersStr) {
+        const users = JSON.parse(usersStr);
+        const foundUser = users.find((u: any) => u.email === email && u.password === password);
+        
+        if (foundUser) {
+          const userData = { id: foundUser.id, email: foundUser.email, name: foundUser.name };
+          setUser(userData);
+          localStorage.setItem("user", JSON.stringify(userData));
+          toast({
+            title: "Login successful",
+            description: "Welcome to TracePoint Analytics!",
+          });
+          return true;
+        }
+      }
+      
       toast({
         title: "Login failed",
         description: "Invalid email or password",
@@ -71,6 +90,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signup = async (name: string, email: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
+    
+    try {
+      // Check if email already exists
+      const usersStr = localStorage.getItem("users");
+      const users = usersStr ? JSON.parse(usersStr) : [];
+      
+      if (users.some((user: any) => user.email === email)) {
+        toast({
+          title: "Signup failed",
+          description: "Email already in use",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Create new user
+      const newUser = {
+        id: `user_${Date.now()}`,
+        name,
+        email,
+        password, // In a real app, you would hash this password
+      };
+      
+      users.push(newUser);
+      localStorage.setItem("users", JSON.stringify(users));
+      
+      // Auto login after signup
+      const userData = { id: newUser.id, email: newUser.email, name: newUser.name };
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+      
+      toast({
+        title: "Signup successful",
+        description: "Welcome to TracePoint Analytics!",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Signup error:", error);
+      toast({
+        title: "Signup error",
+        description: "An error occurred during signup",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
@@ -81,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );
