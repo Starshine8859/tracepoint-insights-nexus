@@ -56,7 +56,7 @@ const DashboardLayout = () => {
               
               <ThemeToggle />
               
-              <Button variant="ghost" size="icon" onClick={showNotification}>
+              {/* <Button variant="ghost" size="icon" onClick={showNotification}>
                 <Bell className="h-5 w-5" />
               </Button>
               
@@ -66,7 +66,7 @@ const DashboardLayout = () => {
                 <a href="/settings">
                   <Settings className="h-5 w-5" />
                 </a>
-              </Button>
+              </Button> */}
             </div>
           </div>
         </header>

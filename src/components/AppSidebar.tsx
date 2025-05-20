@@ -41,7 +41,7 @@ const AppSidebar = () => {
       } transition-all duration-300 ease-in-out`}
       collapsible="icon"
     >
-      <SidebarTrigger className="m-2 self-end" />
+      {/* <SidebarTrigger className="m-2 self-end" /> */}
       <SidebarContent className="mt-4">
         <SidebarGroup>
           <SidebarMenu>

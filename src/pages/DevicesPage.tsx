@@ -56,7 +56,7 @@ const DevicesPage = () => {
       }).toString();
 
       const response = await fetch(
-        `http://localhost:3000/api/devices_laststatus?${params}`,
+        `http://192.168.10.185:3000/api/devices_laststatus?${params}`,
         {
           method: "GET",
         }

@@ -1,46 +1,50 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
-  Server,
-  User,
-  Calendar,
-  HardDrive,
-  Cpu,
-  Database,
-  AlertTriangle,
-  Clock,
-  CheckCircle,
+  ArrowLeft, Server, User, Calendar, HardDrive, Cpu, Database,
+  AlertTriangle, Clock, CheckCircle,
 } from "lucide-react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import {
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+} from "@/components/ui/accordion";
 import DashboardCard from "@/components/Dashboard/DashboardCard";
 import GaugeChart from "@/components/Dashboard/GaugeChart";
 import StatusBadge from "@/components/Dashboard/StatusBadge";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { format, parseISO, subDays } from "date-fns";
+
+// Define the Perfect theme configuration
+const theme = {
+  primary: "bg-indigo-600 dark:bg-indigo-500",
+  primaryHover: "hover:bg-indigo-700 dark:hover:bg-indigo-600",
+  secondary: "bg-gray-100 dark:bg-gray-800",
+  text: "text-gray-900 dark:text-gray-100",
+  textMuted: "text-gray-600 dark:text-gray-400",
+  accent: "bg-indigo-100 dark:bg-indigo-900",
+  border: "border-gray-200 dark:border-gray-700",
+  cardBg: "bg-white dark:bg-gray-900",
+  shadow: "shadow-lg hover:shadow-xl transition-shadow duration-300",
+  transition: "transition-all duration-200 ease-in-out",
+};
+
+// SectionContainer with themed styling
+const SectionContainer = ({ children }) => (
+  <div className={`${theme.cardBg} ${theme.border} rounded-xl ${theme.shadow} p-6`}>
+    {children}
+  </div>
+);
 
 const DeviceDetailsPage = () => {
   const { deviceId } = useParams<{ deviceId: string }>();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [device, setDevice] = useState(null);
+  const [device, setDevice] = useState<any>(null);
   const [deviceLogs, setDeviceLogs] = useState([]);
   const [deviceHistory, setDeviceHistory] = useState([]);
   const [historicalData, setHistoricalData] = useState([]);
@@ -49,46 +53,30 @@ const DeviceDetailsPage = () => {
   useEffect(() => {
     if (!deviceId) return;
 
-    async function fetchDeviceLogs() {
+    const fetchDeviceLogs = async () => {
       try {
-        const params = new URLSearchParams({
-          deviceId: deviceId || "",
-        }).toString();
-        const response = await fetch(
-          `http://localhost:3000/api/device/log?${params}`,
-          {
-            method: "GET",
-          }
-        );
-        if (!response.ok) {
-          throw new Error(`API error: ${response.statusText}`);
-        }
+        const params = new URLSearchParams({ deviceId });
+        const response = await fetch(`http://192.168.10.185:3000/api/device/log?${params}`);
         const data = await response.json();
-        return data.devicelogs; // Expected to return device data array
-      } catch (error) {
-        return []; // Return empty array on failure
-      }
-    }
-
-    // Simulate API call to fetch device details
-    const fetchDevice = async () => {
-      setLoading(true);
-      try {
-        setDeviceLogs(await fetchDeviceLogs());
-      } catch (error) {
-        console.error("Error fetching device details:", error);
-      } finally {
-        setLoading(false);
+        return data.devicelogs;
+      } catch (err) {
+        return [];
       }
     };
 
-    fetchDevice();
+    const loadData = async () => {
+      setLoading(true);
+      const logs = await fetchDeviceLogs();
+      setDeviceLogs(logs);
+      setLoading(false);
+    };
+
+    loadData();
   }, [deviceId]);
 
   useEffect(() => {
-    if (!deviceLogs || deviceLogs.length === 0) return;
-    setLoading(true);
-    console.log("Device Logs:", deviceLogs);
+    if (!deviceLogs?.length) return;
+
     const lastLog = deviceLogs[deviceLogs.length - 1];
     setDevice(lastLog);
 
@@ -98,56 +86,40 @@ const DeviceDetailsPage = () => {
       ram: item.ram,
       disk: item.diskUsing,
       crashes: item.crashesCnt,
-      rawDate: item.date,
     }));
+
     setHistoricalData(chartData);
 
-    const fetchCrash = async () => {
-      const crashdata = [];
-      const jsondata = [];
-      if (!device || !device.rowKey) {
-        return crashdata;
-      }
-      for (let i = 0; i < deviceLogs.length; i++) {
-        if (deviceLogs[i].payloadUrl !== undefined) {
-          const params = new URLSearchParams({
-            file: deviceLogs[i].payloadUrl,
-          }).toString();
-          try {
-            const response = await fetch(
-              `http://localhost:3000/api/jsonfile?${params}`,
-              {
-                method: "GET",
-              }
-            );
-            if (response.ok) {
-              const temp = await response.json();
-              jsondata.push(temp);
-              for (let i = 0; i < temp.crashes.length; i++) {
-                crashdata.push(temp.crashes[i]);
-              }
-            }
-          } catch (error) {
-            console.error("Error fetching crash data:", error);
-          }
+    const fetchCrashData = async () => {
+      const crashes = [];
+      const history = [];
+
+      for (const log of deviceLogs) {
+        if (!log.payloadUrl) continue;
+        try {
+          const params = new URLSearchParams({ file: log.payloadUrl });
+          const response = await fetch(`http://192.168.10.185:3000/api/jsonfile?${params}`);
+          const json = await response.json();
+          history.push(json);
+          if (json.crashes?.length) crashes.push(...json.crashes);
+        } catch (err) {
+          console.error("Crash fetch error:", err);
         }
       }
-      setCrashLogs(crashdata);
-      setDeviceHistory(jsondata);
+
+      setCrashLogs(crashes);
+      setDeviceHistory(history);
     };
 
-    fetchCrash();
-    setLoading(false);
+    fetchCrashData();
   }, [deviceLogs]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-500 dark:text-gray-400">
-            Loading device details...
-          </p>
+          <div className={`animate-spin rounded-full h-12 w-12 border-b-2 ${theme.primary} mx-auto`} />
+          <p className={`mt-4 ${theme.textMuted}`}>Loading device details...</p>
         </div>
       </div>
     );
@@ -155,13 +127,13 @@ const DeviceDetailsPage = () => {
 
   if (!device) {
     return (
-      <div className="text-center py-12">
+      <div className={`text-center py-12 ${theme.cardBg} rounded-xl ${theme.shadow}`}>
         <AlertTriangle className="h-12 w-12 mx-auto text-amber-500" />
-        <h2 className="text-2xl font-semibold mt-4">Device Not Found</h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">
+        <h2 className={`text-2xl font-semibold mt-4 ${theme.text}`}>Device Not Found</h2>
+        <p className={`text-muted-foreground mt-2 ${theme.textMuted}`}>
           The device you're looking for doesn't exist or has been removed.
         </p>
-        <Button className="mt-4" onClick={() => navigate("/devices")}>
+        <Button className={`${theme.primary} ${theme.primaryHover} mt-4 ${theme.transition}`} onClick={() => navigate("/devices")}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Devices
         </Button>
       </div>
@@ -169,220 +141,181 @@ const DeviceDetailsPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 rounded-xl">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/devices")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`${theme.accent} ${theme.primaryHover} ${theme.transition}`}
+          onClick={() => navigate("/devices")}
+        >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Devices
         </Button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+      <SectionContainer>
+        <div className="flex flex-col md:flex-row md:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Server className="h-12 w-12 text-primary p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg" />
+            <Server className={`h-12 w-12 ${theme.primary} p-2 ${theme.accent} rounded-lg`} />
             <div>
-              <h1 className="text-2xl font-semibold">{device.computerName}</h1>
-              <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+              <h1 className={`text-2xl font-semibold ${theme.text}`}>{device.computerName}</h1>
+              <div className={`text-sm ${theme.textMuted}`}>
                 <span className="mr-2">Device ID: {deviceId}</span>
-                {/* <StatusBadge status={device.status} /> */}
+                <span className="mr-2">OS: {device.osVersionFull}</span>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-6 md:gap-8">
-            <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-gray-400" />
-              <div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  User
-                </div>
-                <div className="font-medium">{device.loggedOnUser}</div>
-              </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+            <div className={theme.text}>
+              <User className={`h-4 w-4 ${theme.textMuted} mr-1 inline`} /> {device.loggedOnUser}
             </div>
-
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-gray-400" />
-              <div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Last Seen
-                </div>
-                <div className="font-medium">
-                  {format(parseISO(device.timestamp), "yyyy-MM-dd HH:mm:ss")}
-                </div>
-              </div>
+            <div className={theme.text}>
+              <Calendar className={`h-4 w-4 ${theme.textMuted} mr-1 inline`} />{" "}
+              {format(parseISO(device.timestamp), "yyyy-MM-dd HH:mm:ss")}
             </div>
-
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-gray-400" />
-              <div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Crashes
-                </div>
-                <div className="font-medium">
-                  {device.crashesCnt > 0 ? (
-                    <span className="text-red-500">{device.crashesCnt}</span>
-                  ) : (
-                    "None"
-                  )}
-                </div>
-              </div>
+            <div className={theme.text}>
+              <AlertTriangle className="h-4 w-4 text-red-500 inline mr-1" />
+              Crashes: {device.crashesCnt || "0"}, BSOD: {device.blobCnt || "0"}
             </div>
           </div>
         </div>
-      </div>
+      </SectionContainer>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <DashboardCard title="Current CPU Usage">
-          <div className="flex justify-center py-4">
-            <GaugeChart
-              value={device.cpu}
-              size={160}
-              label="CPU"
-              threshold={{ warning: 70, critical: 90 }}
-            />
+        <DashboardCard
+          title="CPU Usage"
+          icon={<Cpu className="text-indigo-500" />}
+          className={`${theme.cardBg} ${theme.shadow} rounded-xl`}
+        >
+          <GaugeChart
+            value={device.cpu}
+            size={160}
+            label="CPU"
+            threshold={{ warning: 70, critical: 90 }}
+            className={theme.transition}
+          />
+          <div className={`text-sm ${theme.textMuted} text-center mt-2`}>
+            Cores: {device.cpuCores}
           </div>
         </DashboardCard>
 
-        <DashboardCard title="Current RAM Usage">
-          <div className="flex justify-center py-4">
-            <GaugeChart
-              value={device.ram}
-              size={160}
-              label="RAM"
-              threshold={{ warning: 70, critical: 90 }}
-            />
+        <DashboardCard
+          title="RAM Usage"
+          icon={<HardDrive className="text-green-500" />}
+          className={`${theme.cardBg} ${theme.shadow} rounded-xl`}
+        >
+          <GaugeChart
+            value={device.ram}
+            size={160}
+            label="RAM"
+            threshold={{ warning: 70, critical: 90 }}
+            className={theme.transition}
+          />
+          <div className={`text-sm ${theme.textMuted} text-center mt-2`}>
+            Size: {device.ramSizeGB} GB
           </div>
         </DashboardCard>
 
-        <DashboardCard title="Current Disk Usage">
-          <div className="flex justify-center py-4">
-            <GaugeChart
-              value={device.diskUsing}
-              size={160}
-              label="Hard"
-              threshold={{ warning: 70, critical: 90 }}
-            />
+        <DashboardCard
+          title="Disk Usage"
+          icon={<Database className="text-purple-500" />}
+          className={`${theme.cardBg} ${theme.shadow} rounded-xl`}
+        >
+          <GaugeChart
+            value={device.diskUsing}
+            size={160}
+            label="Disk"
+            threshold={{ warning: 70, critical: 90 }}
+            className={theme.transition}
+          />
+          <div className={`text-sm ${theme.textMuted} text-center mt-2`}>
+            {device.diskUseSpace} / {device.disk}
           </div>
         </DashboardCard>
       </div>
 
-      <Tabs defaultValue="performance">
-        <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
-          <TabsTrigger value="performance">
-            <Cpu className="mr-2 h-4 w-4" /> Performance History
+      <Tabs defaultValue="performance" className="space-y-4">
+        <TabsList className={`grid w-full grid-cols-3 ${theme.secondary} rounded-xl p-1 ${theme.border}`}>
+          <TabsTrigger
+            value="performance"
+            className={`${theme.accent} ${theme.primaryHover} ${theme.transition} rounded-lg`}
+          >
+            <Cpu className="h-4 w-4 mr-2" /> Performance
           </TabsTrigger>
-          <TabsTrigger value="crashes">
-            <AlertTriangle className="mr-2 h-4 w-4" /> Crash History
+          <TabsTrigger
+            value="crashes"
+            className={`${theme.accent} ${theme.primaryHover} ${theme.transition} rounded-lg`}
+          >
+            <AlertTriangle className="h-4 w-4 mr-2" /> Crashes
           </TabsTrigger>
-          <TabsTrigger value="raw-data">
-            <Database className="mr-2 h-4 w-4" /> Raw Telemetry
+          <TabsTrigger
+            value="raw-data"
+            className={`${theme.accent} ${theme.primaryHover} ${theme.transition} rounded-lg`}
+          >
+            <Database className="h-4 w-4 mr-2" /> Raw Telemetry
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="performance" className="mt-6">
-          <DashboardCard title="Performance Trends" description="Last 30 days">
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={historicalData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value, name, unit) => {
-                      // Fix type issue by checking if name is a string before calling toUpperCase
-                      const formattedName =
-                        typeof name === "string" ? name.toUpperCase() : name;
-                      return [`${value}`, formattedName];
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="cpu"
-                    name="CPU"
-                    stroke="#3B82F6"
-                    strokeWidth={2}
-                    dot={false}
-                    unit="%"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="ram"
-                    name="RAM"
-                    stroke="#10B981"
-                    strokeWidth={2}
-                    dot={false}
-                    unit="%"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="disk"
-                    name="Disk"
-                    stroke="#8B5CF6"
-                    strokeWidth={2}
-                    dot={false}
-                    unit="%"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="crashes"
-                    name="Crashes"
-                    stroke="#FF5516"
-                    strokeWidth={2}
-                    dot={false}
-                    unit=""
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+        <TabsContent value="performance">
+          <DashboardCard
+            title="Performance Trends"
+            description="Last 30 days"
+            className={`${theme.cardBg} ${theme.shadow} rounded-xl`}
+          >
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={historicalData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.textMuted} />
+                <XAxis dataKey="date" stroke={theme.text} />
+                <YAxis stroke={theme.text} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: theme.cardBg,
+                    border: theme.border,
+                    borderRadius: "8px",
+                    color: theme.text,
+                  }}
+                />
+                <Line type="monotone" dataKey="cpu" stroke="#3B82F6" strokeWidth={2} />
+                <Line type="monotone" dataKey="ram" stroke="#10B981" strokeWidth={2} />
+                <Line type="monotone" dataKey="disk" stroke="#8B5CF6" strokeWidth={2} />
+                <Line type="monotone" dataKey="crashes" stroke="#EF4444" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
           </DashboardCard>
         </TabsContent>
 
-        <TabsContent value="crashes" className="mt-6">
+        <TabsContent value="crashes">
           <DashboardCard
             title="Crash Events"
-            description="Recent system errors and crashes"
+            className={`${theme.cardBg} ${theme.shadow} rounded-xl`}
           >
             {crashLogs.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="mx-auto w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                  <CheckCircle className="h-6 w-6 text-green-500" />
-                </div>
-                <h3 className="mt-4 text-lg font-medium">
-                  No Crashes Detected
-                </h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  This device has not experienced any crashes in the monitored
-                  period.
-                </p>
+              <div className={`text-center py-12 ${theme.textMuted}`}>
+                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-2" />
+                No crashes detected.
               </div>
             ) : (
-              <div className="divide-y">
-                {crashLogs.map((crash, index) => (
-                  <div key={index} className="py-4">
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {crashLogs.map((crash, idx) => (
+                  <div key={idx} className="py-4">
                     <div className="flex items-start gap-3">
-                      <div className="bg-red-100 dark:bg-red-900/20 p-2 rounded-full">
-                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                      <div className={`p-2 rounded-full ${theme.accent}`}>
+                        <AlertTriangle className="text-red-500 h-5 w-5" />
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{crash.source}</h3>
-                          <Badge variant="outline" className="text-xs">
-                            Event ID: {crash.eventId}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          {crash.message}
+                        <h3 className={`font-medium ${theme.text}`}>{crash.source}</h3>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${theme.border} ${theme.text}`}
+                        >
+                          Event ID: {crash.eventId}
+                        </Badge>
+                        <p className={`text-sm mt-1 ${theme.textMuted}`}>{crash.message}</p>
+                        <p className={`text-xs mt-1 ${theme.textMuted}`}>
+                          <Clock className="h-3 w-3 inline mr-1" />
+                          {format(parseISO(crash.timestamp), "yyyy-MM-dd HH:mm:ss")}
                         </p>
-                        <div className="flex items-center mt-2 text-xs text-gray-500 dark:text-gray-400">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {format(
-                            parseISO(crash.timestamp),
-                            "yyyy-MM-dd HH:mm:ss"
-                          )}
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -392,16 +325,20 @@ const DeviceDetailsPage = () => {
           </DashboardCard>
         </TabsContent>
 
-        <TabsContent value="raw-data" className="mt-6">
-          <DashboardCard title="Raw Telemetry Data" description="JSON format">
-            <Accordion type="single" collapsible className="w-full">
-              {deviceHistory.slice(0, 7).map((item, index) => (
-                <AccordionItem key={index} value={`item-${index}`}>
-                  <AccordionTrigger>
+        <TabsContent value="raw-data">
+          <DashboardCard
+            title="Raw Telemetry Data"
+            description="First 7 logs"
+            className={`${theme.cardBg} ${theme.shadow} rounded-xl`}
+          >
+            <Accordion type="single" collapsible>
+              {deviceHistory.slice(0, 7).map((item, idx) => (
+                <AccordionItem key={idx} value={`item-${idx}`}>
+                  <AccordionTrigger className={`${theme.text} ${theme.transition}`}>
                     {format(parseISO(item.timestamp), "MMMM d, yyyy")}
                   </AccordionTrigger>
                   <AccordionContent>
-                    <pre className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md overflow-x-auto text-xs">
+                    <pre className={`text-xs ${theme.secondary} p-4 rounded-md overflow-x-auto ${theme.text}`}>
                       {JSON.stringify(item, null, 2)}
                     </pre>
                   </AccordionContent>

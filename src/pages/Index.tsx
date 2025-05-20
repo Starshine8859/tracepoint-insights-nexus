@@ -5,7 +5,6 @@ import {
   HardDrive,
   AlertTriangle,
   Database,
-  Users,
   TrendingUp,
   ArrowRight,
 } from "lucide-react";
@@ -13,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import DashboardCard from "@/components/Dashboard/DashboardCard";
 import StatCard from "@/components/Dashboard/StatCard";
 import GaugeChart from "@/components/Dashboard/GaugeChart";
-import DevicesTable from "@/components/Dashboard/DevicesTable";
 import {
   BarChart,
   Bar,
@@ -27,11 +25,6 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import {
-  MOCK_DEVICES,
-  MOCK_TRENDS,
-  MOCK_OS_DISTRIBUTION,
-} from "@/lib/mock-data";
 
 export type TrendData = {
   DeviceId: string;
@@ -47,33 +40,9 @@ const Index = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [devices, setDevices] = useState([]);
-  const [trends, setTrends] = useState(MOCK_TRENDS.slice(-14)); // Last 14 days
   const [osDistribution, setOsDistribution] = useState([]);
   const [lastUpdatedDevice, setLastUpdatedDevice] = useState(null);
   const [trendData, setTrendData] = useState<TrendData[]>([]);
-
-  const totalDevices = devices.length;
-
-  const avgCpu = Math.round(
-    devices.reduce((sum, d) => sum + d.cpu, 0) / totalDevices
-  );
-  const avgRam = Math.round(
-    devices.reduce((sum, d) => sum + d.ram, 0) / totalDevices
-  );
-  const avgDiskUsage = Math.round(
-    devices.reduce((sum, d) => sum + d.disk.percentage, 0) / totalDevices
-  );
-
-  // Calculate total crashes in the last 14 days
-  const totalCrashes = trends.reduce((sum, day) => sum + day.crashCount, 0);
-
-  // Simulate loading data
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     const getDeviceData = async () => {
@@ -90,7 +59,7 @@ const Index = () => {
         }).toString();
 
         const response = await fetch(
-          `http://localhost:3000/api/devices_laststatus?${params}`,
+          `http://192.168.10.185:3000/api/devices_laststatus?${params}`,
           {
             method: "GET",
           }
@@ -99,9 +68,9 @@ const Index = () => {
           throw new Error(`API error: ${response.statusText}`);
         }
         const data = await response.json();
-        setDevices(data.devices); // Expected to return device data array
+        setDevices(data.devices);
       } catch (error) {
-        // return []; // Return empty array on failure
+        console.error("Failed to fetch device data:", error);
       }
       setLoading(false);
     };
@@ -125,6 +94,7 @@ const Index = () => {
         ).length,
       },
     ]);
+
     setLastUpdatedDevice(
       devices.length > 0
         ? devices.reduce((latest, item) => {
@@ -132,36 +102,31 @@ const Index = () => {
               ? item
               : latest;
           }, devices[0])
-        : ""
+        : null
     );
-
-    //Recent Performance Trends
-    const trends: TrendData[] = [];
-    const today = new Date();
 
     const latestDevices = devices
       .slice()
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, 10); // Take the top 10 most recent devices
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 10);
 
-    for (let i = latestDevices.length - 1; i >= 0; i--) {
-      const dayTrend: TrendData = {
-        DeviceId: latestDevices[i].rowKey,
-        Cpu: latestDevices[i].cpu,
-        Ram: latestDevices[i].ram,
-        Disk: latestDevices[i].diskUsing,
-        crashCount: latestDevices[i].crashesCnt, // More crashes on certain days
-      };
-      trends.push(dayTrend);
-    }
+    const trends = latestDevices.reverse().map((device) => ({
+      DeviceId: device.rowKey,
+      Cpu: device.cpu,
+      Ram: device.ram,
+      Disk: device.diskUsing,
+      crashCount: device.crashesCnt,
+    }));
+
     setTrendData(trends);
   }, [devices]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
+        <div className="text-center select-none">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-500 dark:text-gray-400">
+          <p className="mt-4 text-gray-500 dark:text-gray-400 font-medium">
             Loading dashboard...
           </p>
         </div>
@@ -170,37 +135,36 @@ const Index = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <div className="flex items-center gap-2">
-          {/* <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/trends")}
+    <div className="space-y-6 p-6 select-none">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+          Dashboard
+        </h1>
+        <div className="flex items-center gap-3">
+          <Button 
+            size="sm" 
+            onClick={() => navigate("/devices")}
+            className="shadow-sm hover:shadow-md transition-shadow duration-200"
           >
-            <TrendingUp className="mr-2 h-4 w-4" /> View All Trends
-          </Button> */}
-          <Button size="sm" onClick={() => navigate("/devices")}>
-            <Database className="mr-2 h-4 w-4" /> View All Devices
+            <Database className="mr-2 h-4 w-4" /> 
+            View All Devices
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Devices"
           value={devices.length}
           icon={<Database className="h-6 w-6" />}
           color="blue"
+          className="hover:scale-102 transition-transform duration-200"
         />
         <StatCard
-          title="Today Connected Devices"
-          value={
-            devices.filter(
-              (d) => d.timestamp > new Date().toISOString().split("T")[0]
-            ).length
-          }
+          title="Connected Today"
+          value={devices.filter(
+            (d) => d.timestamp > new Date().toISOString().split("T")[0]
+          ).length}
           icon={<Cpu className="h-6 w-6" />}
           delta={Math.round(
             (devices.filter(
@@ -211,60 +175,56 @@ const Index = () => {
           )}
           deltaLabel="of total"
           color="green"
+          className="hover:scale-102 transition-transform duration-200"
         />
         <StatCard
-          title="Today not Connected Devices"
-          value={
-            devices.filter(
-              (d) => d.timestamp < new Date().toISOString().split("T")[0]
-            ).length
-          }
+          title="Offline Devices"
+          value={devices.filter(
+            (d) => d.timestamp < new Date().toISOString().split("T")[0]
+          ).length}
           icon={<HardDrive className="h-6 w-6" />}
           color="amber"
+          className="hover:scale-102 transition-transform duration-200"
         />
         <StatCard
-          title="Last Connected Devices Error "
-          value={devices.reduce((sum, item) => sum + item.crashesCnt, 0)}
+          title="Total Errors"
+          value={devices.reduce((sum, item) => sum + (item.crashesCnt || 0), 0)}
           icon={<AlertTriangle className="h-6 w-6" />}
           color="red"
+          className="hover:scale-102 transition-transform duration-200"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardCard
-          title={`Last updated device on ${
-            lastUpdatedDevice != null ? lastUpdatedDevice.timestamp : "N/A"
-          }`}
-          description={`${
-            lastUpdatedDevice != null ? lastUpdatedDevice.rowKey : "N/A"
-          }`}
+          title="Latest Device Status"
+          description={lastUpdatedDevice ? `Device ID: ${lastUpdatedDevice.rowKey}` : "No devices"}
+          className="backdrop-blur-sm bg-white/50 dark:bg-gray-800/50"
         >
-          <div className="flex flex-wrap justify-around gap-4 mt-6">
+          <div className="flex flex-wrap justify-around gap-6 mt-8">
             <GaugeChart
-              value={lastUpdatedDevice?.cpu ?? "N/A"}
+              value={lastUpdatedDevice?.cpu ?? 0}
               label="CPU Usage"
+              className="hover:scale-105 transition-transform duration-200"
             />
             <GaugeChart
-              value={
-                lastUpdatedDevice.ram == undefined
-                  ? "N/A"
-                  : lastUpdatedDevice.ram
-              }
+              value={lastUpdatedDevice?.ram ?? 0}
               label="RAM Usage"
+              className="hover:scale-105 transition-transform duration-200"
             />
             <GaugeChart
-              value={
-                lastUpdatedDevice.diskUsing === undefined
-                  ? "N/A"
-                  : lastUpdatedDevice.diskUsing
-              }
+              value={lastUpdatedDevice?.diskUsing ?? 0}
               label="Disk Usage"
+              className="hover:scale-105 transition-transform duration-200"
             />
           </div>
         </DashboardCard>
 
-        <DashboardCard title="Operating System Distribution">
-          <div className="h-[250px]">
+        <DashboardCard 
+          title="OS Distribution"
+          className="backdrop-blur-sm bg-white/50 dark:bg-gray-800/50"
+        >
+          <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -281,11 +241,26 @@ const Index = () => {
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
+                      className="hover:opacity-80 transition-opacity duration-200"
                     />
                   ))}
                 </Pie>
-                <Legend verticalAlign="bottom" height={36} />
-                <Tooltip formatter={(value) => [`${value} devices`, "Count"]} />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36}
+                  formatter={(value) => (
+                    <span className="text-sm font-medium">{value}</span>
+                  )}
+                />
+                <Tooltip 
+                  formatter={(value) => [`${value} devices`, "Count"]}
+                  contentStyle={{
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    border: "none",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -293,100 +268,92 @@ const Index = () => {
       </div>
 
       <DashboardCard
-        title="Recent Performance Trends"
-        // description="Last 14 days rolling average"
-        // footer={
-        //   <Button variant="ghost" size="sm" onClick={() => navigate("/trends")}>
-        //     View detailed trends <ArrowRight className="ml-1 h-4 w-4" />
-        //   </Button>
-        // }
+        title="Performance Trends"
+        className="backdrop-blur-sm bg-white/50 dark:bg-gray-800/50"
       >
-        <div className="h-[250px]">
+        <div className="h-[300px] mt-4">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={trendData}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
             >
-              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
               <XAxis
                 dataKey="DeviceId"
-                tickFormatter={(value) => {
-                  const parts = value.split("-");
-                  return `${parts[0]}`;
-                }}
+                tickFormatter={(value) => value.split("-")[0]}
+                tick={{ fontSize: 12 }}
               />
-              <YAxis />
+              <YAxis tick={{ fontSize: 12 }} />
               <Tooltip
-                formatter={(value, name) => {
-                  const formattedName =
-                    typeof name === "string"
-                      ? name.replace(/([A-Z])/g, " $1").trim()
-                      : name;
-                  return [`${value}%`, formattedName];
+                contentStyle={{
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  border: "none",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
                 }}
+                formatter={(value, name) => [
+                  `${value}%`,
+                  name.replace(/([A-Z])/g, " $1").trim(),
+                ]}
               />
-              <Bar dataKey="Cpu" name="CPU" fill="#3B82F6" />
-              <Bar dataKey="Ram" name="RAM" fill="#10B981" />
-              <Bar dataKey="Disk" name="Disk" fill="#E0B981" />
+              <Bar 
+                dataKey="Cpu" 
+                name="CPU" 
+                fill="#3B82F6"
+                radius={[4, 4, 0, 0]}
+                className="hover:opacity-80 transition-opacity duration-200"
+              />
+              <Bar 
+                dataKey="Ram" 
+                name="RAM" 
+                fill="#10B981"
+                radius={[4, 4, 0, 0]}
+                className="hover:opacity-80 transition-opacity duration-200"
+              />
+              <Bar 
+                dataKey="Disk" 
+                name="Disk" 
+                fill="#F59E0B"
+                radius={[4, 4, 0, 0]}
+                className="hover:opacity-80 transition-opacity duration-200"
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </DashboardCard>
 
-      {/* <DashboardCard
-        title="Recent Device Activity"
-        description="Showing devices with potential issues"
-        footer={
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/devices")}
-          >
-            View all devices <ArrowRight className="ml-1 h-4 w-4" />
-          </Button>
-        }
-      >
-        <DevicesTable 
-          devices={devices
-            .sort((a, b) => {
-              // Sort by status priority: error > warning > offline > online
-              const priority = { error: 3, warning: 2, offline: 1, online: 0 };
-              return priority[b.status] - priority[a.status];
-            })
-            .slice(0, 5)} 
-        />
-      </DashboardCard> */}
-
       <DashboardCard
         title="Crash Summary"
-        // description={`${totalCrashes} crashes detected in the last 14 days`}
-        // footer={
-        //   <Button
-        //     variant="ghost"
-        //     size="sm"
-        //     onClick={() => navigate("/crashes")}
-        //   >
-        //     View crash analysis <ArrowRight className="ml-1 h-4 w-4" />
-        //   </Button>
-        // }
+        className="backdrop-blur-sm bg-white/50 dark:bg-gray-800/50"
       >
-        <div className="h-[250px]">
+        <div className="h-[300px] mt-4">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={trendData}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
             >
-              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
               <XAxis
                 dataKey="DeviceId"
-                tickFormatter={(value) => {
-                  const parts = value.split("-");
-                  return `${parts[0]}`;
+                tickFormatter={(value) => value.split("-")[0]}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  border: "none",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
                 }}
               />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="crashCount" name="Crashes" fill="#EF4444" />
+              <Bar 
+                dataKey="crashCount" 
+                name="Crashes" 
+                fill="#EF4444"
+                radius={[4, 4, 0, 0]}
+                className="hover:opacity-80 transition-opacity duration-200"
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
