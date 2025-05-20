@@ -1,4 +1,3 @@
-
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -7,10 +6,9 @@ import {
   TableRow,
   TableHead,
   TableBody,
-  TableCell
+  TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import StatusBadge from "./StatusBadge";
 import { DeviceSummary } from "@/lib/mock-data";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { Eye } from "lucide-react";
@@ -22,7 +20,7 @@ type DevicesTableProps = {
 
 const DevicesTable = ({ devices, limit }: DevicesTableProps) => {
   const navigate = useNavigate();
-  
+
   const displayDevices = useMemo(() => {
     return limit ? devices.slice(0, limit) : devices;
   }, [devices, limit]);
@@ -36,12 +34,14 @@ const DevicesTable = ({ devices, limit }: DevicesTableProps) => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Status</TableHead>
+            <TableHead>Device ID</TableHead>
             <TableHead>Computer Name</TableHead>
+            <TableHead className="hidden md:table-cell">OS</TableHead>
             <TableHead>User</TableHead>
             <TableHead className="hidden md:table-cell">Last Seen</TableHead>
             <TableHead className="hidden lg:table-cell">CPU</TableHead>
             <TableHead className="hidden lg:table-cell">RAM</TableHead>
+            <TableHead className="hidden lg:table-cell">Disk</TableHead>
             <TableHead className="hidden lg:table-cell">Crashes</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -49,25 +49,27 @@ const DevicesTable = ({ devices, limit }: DevicesTableProps) => {
         <TableBody>
           {displayDevices.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+              <TableCell
+                colSpan={10}
+                className="text-center py-10 text-muted-foreground"
+              >
                 No devices found
               </TableCell>
             </TableRow>
           ) : (
-            displayDevices.map((device) => {
-              const lastSeen = parseISO(device.lastSeen);
+            displayDevices.map((device, index) => {
+              const lastSeen = parseISO(device.timestamp);
               return (
                 <TableRow key={device.deviceId}>
-                  <TableCell>
-                    <StatusBadge status={device.status} />
-                  </TableCell>
+                  <TableCell>{device.deviceId}</TableCell>
                   <TableCell className="font-medium">
                     {device.computerName}
                   </TableCell>
+                  <TableCell>{device.osVersion}</TableCell>
                   <TableCell>{device.loggedOnUser}</TableCell>
                   <TableCell className="hidden md:table-cell">
                     <div className="text-sm">
-                      <div>{format(lastSeen, "MMM d, yyyy")}</div>
+                      <div>{format(lastSeen, "yyyy-MM-dd")}</div>
                       <div className="text-muted-foreground">
                         {formatDistanceToNow(lastSeen, { addSuffix: true })}
                       </div>
@@ -80,12 +82,15 @@ const DevicesTable = ({ devices, limit }: DevicesTableProps) => {
                     {device.ram}%
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    {device.crashCount > 0 ? (
+                    {device.disk}GB
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {device.crashesCnt > 0 ? (
                       <span className="text-red-500 font-medium">
-                        {device.crashCount}
+                        {device.crashesCnt}
                       </span>
                     ) : (
-                      device.crashCount
+                      device.crashesCnt
                     )}
                   </TableCell>
                   <TableCell className="text-right">

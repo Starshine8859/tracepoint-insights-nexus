@@ -25,9 +25,9 @@ import {
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Devices", href: "/devices", icon: Computer },
-  { name: "Trends", href: "/trends", icon: LineChart },
-  { name: "Crashes", href: "/crashes", icon: CircleAlert },
-  { name: "Settings", href: "/settings", icon: SettingsIcon },
+  // { name: "Trends", href: "/trends", icon: LineChart },
+  // { name: "Crashes", href: "/crashes", icon: CircleAlert },
+  // { name: "Settings", href: "/settings", icon: SettingsIcon },
 ];
 
 const AppSidebar = () => {
