@@ -39,7 +39,7 @@ const SectionContainer = ({ children }) => (
   </div>
 );
 
-const apiUrl = '192.168.10.185:3000';
+const apiUrl = '10.2.0.4:3000';
 
 const DeviceDetailsPage = () => {
   const { deviceId } = useParams<{ deviceId: string }>();
