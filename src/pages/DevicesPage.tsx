@@ -22,7 +22,8 @@ import {
   subDays,
   endOfDay,
 } from "date-fns";
-const apiUrl = '10.2.0.4:3000';
+import config from '../lib/config';
+const apiUrl = config.apiUrl;
 
 
 const DevicesPage = () => {

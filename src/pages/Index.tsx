@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import config from '../config.js';
+
 import {
   Cpu,
   HardDrive,
@@ -26,7 +26,8 @@ import {
   Cell,
   Legend,
 } from "recharts";
-const apiUrl = '10.2.0.4:3000';
+import config from '../lib/config';
+const apiUrl = config.apiUrl;
 
 export type TrendData = {
   DeviceId: string;

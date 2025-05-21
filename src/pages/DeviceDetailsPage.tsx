@@ -38,8 +38,10 @@ const SectionContainer = ({ children }) => (
     {children}
   </div>
 );
+import config from '../lib/config';
+const apiUrl = config.apiUrl;
 
-const apiUrl = '10.2.0.4:3000';
+
 
 const DeviceDetailsPage = () => {
   const { deviceId } = useParams<{ deviceId: string }>();
