@@ -22,6 +22,8 @@ import {
   subDays,
   endOfDay,
 } from "date-fns";
+const apiUrl = '192.168.10.185:3000';
+
 
 const DevicesPage = () => {
   const [loading, setLoading] = useState(false);
@@ -56,7 +58,7 @@ const DevicesPage = () => {
       }).toString();
 
       const response = await fetch(
-        `http://192.168.10.185:3000/api/devices_laststatus?${params}`,
+        `http://${apiUrl}/api/devices_laststatus?${params}`,
         {
           method: "GET",
         }

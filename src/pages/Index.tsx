@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import config from '../config.js';
 import {
   Cpu,
   HardDrive,
@@ -25,6 +26,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
+const apiUrl = '192.168.10.185:3000';
 
 export type TrendData = {
   DeviceId: string;
@@ -57,9 +59,9 @@ const Index = () => {
           dateFrom: thirtyDaysAgo.toISOString() || "",
           dateTo: now.toISOString() || "",
         }).toString();
-
+        
         const response = await fetch(
-          `http://192.168.10.185:3000/api/devices_laststatus?${params}`,
+          `http://${apiUrl}/api/devices_laststatus?${params}`,
           {
             method: "GET",
           }

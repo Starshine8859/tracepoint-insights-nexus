@@ -39,6 +39,8 @@ const SectionContainer = ({ children }) => (
   </div>
 );
 
+const apiUrl = '192.168.10.185:3000';
+
 const DeviceDetailsPage = () => {
   const { deviceId } = useParams<{ deviceId: string }>();
   const navigate = useNavigate();
@@ -56,7 +58,7 @@ const DeviceDetailsPage = () => {
     const fetchDeviceLogs = async () => {
       try {
         const params = new URLSearchParams({ deviceId });
-        const response = await fetch(`http://192.168.10.185:3000/api/device/log?${params}`);
+        const response = await fetch(`http://${apiUrl}/api/device/log?${params}`);
         const data = await response.json();
         return data.devicelogs;
       } catch (err) {
@@ -98,7 +100,7 @@ const DeviceDetailsPage = () => {
         if (!log.payloadUrl) continue;
         try {
           const params = new URLSearchParams({ file: log.payloadUrl });
-          const response = await fetch(`http://192.168.10.185:3000/api/jsonfile?${params}`);
+          const response = await fetch(`http://${apiUrl}/api/jsonfile?${params}`);
           const json = await response.json();
           history.push(json);
           if (json.crashes?.length) crashes.push(...json.crashes);
